@@ -1,11 +1,11 @@
-import fastify, { FastifyInstance } from "fastify";
+import fastify, { FastifyHttp2SecureOptions, FastifyInstance } from "fastify";
 import mkdirp from 'mkdirp';
 
 import { keygen } from 'tls-keygen';
 
 import fastifyStatic from "@fastify/static";
 import { existsSync, readFileSync } from "fs";
-import { BaseUcpComponent, DefaultUcpModel, UcpModel, UcpModelProxySchema, z } from "ior:esm:/tla.EAM.UcpComponent[main]";
+import { BaseUcpComponent, DefaultUcpModel, UcpModel, UcpModelProxySchema, UDELoader, z } from "ior:esm:/tla.EAM.UcpComponent[main]";
 import path from "path";
 import OnceWebserver from "../3_services/OnceWebserver.interface.mjs";
 import { ServerSideUcpComponentDescriptorInterface } from "ior:esm:/tla.EAM.Once[dev]";
@@ -13,6 +13,7 @@ import { ServerSideUcpComponentDescriptorInterface } from "ior:esm:/tla.EAM.Once
 const modelSchema =
   z.object({
     port: z.number(),
+    protocol: z.string().regex(/^https?$/)
   }).merge(BaseUcpComponent.modelSchema).merge(UcpModelProxySchema);
 
 type ModelDataType = z.infer<typeof modelSchema>
@@ -20,26 +21,24 @@ type ModelDataType = z.infer<typeof modelSchema>
 
 export default class DefaultOnceWebserver extends BaseUcpComponent<ModelDataType, OnceWebserver> implements OnceWebserver {
 
-
-
   static get modelSchema() {
     return modelSchema;
   }
 
   public readonly ucpModel: UcpModel = new DefaultUcpModel<ModelDataType, OnceWebserver>(DefaultOnceWebserver.modelDefaultData, this);
 
-
   static get modelDefaultData() {
     return {
       ...super.modelDefaultData,
-      port: 3000
+      port: 3000,
+      protocol: "https"
     }
   }
 
   private _server: any;
 
   get tlsPath(): string {
-    return path.join(ONCE.eamd.scenario.eamdPath, ONCE.eamd.scenario.scenarioPath, (this.classDescriptor.ucpComponentDescriptor as ServerSideUcpComponentDescriptorInterface).scenarioDirectory, 'tls')
+    return path.join(ONCE.eamd.scenario.eamdPath, ONCE.eamd.scenario.webRoot, (this.classDescriptor.ucpComponentDescriptor as ServerSideUcpComponentDescriptorInterface).scenarioDirectory, 'tls')
   }
 
   get tlsKeyPath(): string {
@@ -48,6 +47,28 @@ export default class DefaultOnceWebserver extends BaseUcpComponent<ModelDataType
 
   get tlsCertPath(): string {
     return path.join(this.tlsPath, 'cert.pem');
+  }
+
+  static async start(scenarioName?: string) {
+    if (typeof scenarioName === "undefined") scenarioName = this.classDescriptor.className + 'Instance';
+    try {
+      let loadedServer = await UDELoader.load(scenarioName);
+      if (loadedServer instanceof this) {
+        await loadedServer.start();
+        return loadedServer;
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message === 'No file Found') {
+      } else {
+        throw e;
+      }
+    }
+
+    let newServer = new this();
+    newServer.persistanceManager.addAlias(scenarioName);
+    await newServer.persistanceManager.create();
+    await newServer.start();
+    return newServer;
   }
 
   async start(): Promise<void> {
@@ -63,15 +84,20 @@ export default class DefaultOnceWebserver extends BaseUcpComponent<ModelDataType
       }
     }
 
-    let server = fastify({
+    let options: any = {
       logger: true,
-      http2: true,
-      https: {
+    }
+
+    if (this.model.protocol === "https") {
+      options.https = {
         allowHTTP1: true, // fallback support for HTTP1
         key: readFileSync(tlsPaths.key),
         cert: readFileSync(tlsPaths.cert)
       }
-    });
+      options.http2 = true;
+    }
+
+    let server = fastify(options);
 
 
     let webRoot = path.join(scenario.eamdPath, scenario.webRoot);
@@ -93,6 +119,7 @@ export default class DefaultOnceWebserver extends BaseUcpComponent<ModelDataType
       console.error(err);
     }
     this._server = server;
+
     console.log("ONCE STARTED AS NODE_JS WITH EXTERNAL MODULE");
   }
 
@@ -123,5 +150,10 @@ export default class DefaultOnceWebserver extends BaseUcpComponent<ModelDataType
 
 </body></html>
 `
+  }
+
+  async stop(): Promise<boolean> {
+    this._server.close();
+    return true;
   }
 }
