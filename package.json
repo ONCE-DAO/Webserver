@@ -1,0 +1,29 @@
+{
+  "name": "--",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.mjs",
+  "namespace": "--",
+  "onceDependencies": [
+    "Once"
+  ],
+  "scripts": {
+    "init": "npx ts-node-esm initComponent.mts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "--"
+  },
+  "author": "##UserName##",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com:ONCE-DAO/##RepoName##/issues"
+  },
+  "homepage": "https://github.com:ONCE-DAO/##RepoName###readme",
+  "devDependencies": {
+    "simple-git": "^3.9.0",
+    "ts-node": "^10.4.0",
+    "ts-patch": "^2.0.1",
+    "typescript": "^4.7.2"
+  }
+}

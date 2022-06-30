@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "../../../../../../Scenarios/localhost/tla/EAM/Once/UcpComponent/main",
+    "plugins": [
+      {
+        "transform": "../../../../../../Scenarios/localhost/tla/EAM/Thinglish/Transformer/merge/3_services/transformer.cjs"
+      }
+    ]
+  },
+  "include": [
+    "./src",
+    "../../../../../../Scenarios/localhost"
+  ],
+  "exclude": [
+    "**/test/**/*",
+    "dist",
+    "node_modules",
+    "../../../../../../Scenarios/localhost/tla/EAM/Once/UcpComponent/main"
+  ]
+}
