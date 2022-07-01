@@ -1,6 +1,6 @@
 {
   "name": "OnceWebserver",
-  "version": "main",
+  "version": "build",
   "description": "",
   "main": "index.mjs",
   "namespace": "tla.EAM.Once.Server",
