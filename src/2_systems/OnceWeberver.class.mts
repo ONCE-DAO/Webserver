@@ -5,10 +5,10 @@ import { keygen } from 'tls-keygen';
 
 import fastifyStatic from "@fastify/static";
 import { existsSync, readFileSync } from "fs";
-import { BaseUcpComponent, DefaultUcpModel, UcpModel, UcpModelProxySchema, UDELoader, z } from "ior:esm:/tla.EAM.UcpComponent[main]";
+import { BaseUcpComponent, DefaultUcpModel, UcpModel, UcpModelProxySchema, UDELoader, z } from "ior:esm:/tla.EAM.Once.UcpComponent[build]";
 import path from "path";
 import OnceWebserver from "../3_services/OnceWebserver.interface.mjs";
-import { ServerSideUcpComponentDescriptorInterface } from "ior:esm:/tla.EAM.Once[dev]";
+import { ServerSideUcpComponentDescriptorInterface } from "ior:esm:/tla.EAM.Once[dev-merge]";
 
 const modelSchema =
   z.object({

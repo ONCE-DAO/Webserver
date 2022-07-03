@@ -4,9 +4,6 @@
     "rootDir": "./src"
   },
   "include": [
-    "./src"
-  ],
-  "exclude": [
-    "index.default.mts"
+    "./src",
   ]
 }
