@@ -8,7 +8,7 @@ import { existsSync, readFileSync } from "fs";
 import { BaseUcpComponent, DefaultUcpModel, UcpModel, UcpModelProxySchema, UDELoader, z } from "ior:esm:/tla.EAM.Once.UcpComponent[build]";
 import path from "path";
 import OnceWebserver from "../3_services/OnceWebserver.interface.mjs";
-import { ServerSideUcpComponentDescriptorInterface } from "ior:esm:/tla.EAM.Once[dev-merge]";
+// import { ServerSideUcpComponentDescriptorInterface } from "ior:esm:/tla.EAM.Once[build]";
 
 const modelSchema =
   z.object({
@@ -38,7 +38,8 @@ export default class DefaultOnceWebserver extends BaseUcpComponent<ModelDataType
   private _server: any;
 
   get tlsPath(): string {
-    return path.join(ONCE.eamd.scenario.eamdPath, ONCE.eamd.scenario.webRoot, (this.classDescriptor.ucpComponentDescriptor as ServerSideUcpComponentDescriptorInterface).scenarioDirectory, 'tls')
+    return ""
+    // return path.join(ONCE.eamd.scenario.eamdPath, ONCE.eamd.scenario.webRoot, (this.classDescriptor.ucpComponentDescriptor as ServerSideUcpComponentDescriptorInterface).scenarioDirectory, 'tls')
   }
 
   get tlsKeyPath(): string {
@@ -73,11 +74,11 @@ export default class DefaultOnceWebserver extends BaseUcpComponent<ModelDataType
 
   async start(): Promise<void> {
 
-    let scenario = ONCE.eamd.scenario;
+    let scenario = ONCE.eamd.currentScenario;
     const tlsPaths = { key: this.tlsKeyPath, cert: this.tlsCertPath }
 
 
-    if (scenario.name === "localhost") {
+    if (scenario.namespace === "localhost") {
       if (!existsSync(tlsPaths.key)) {
         await mkdirp(path.dirname(tlsPaths.key))
         await keygen({ ...tlsPaths, entrust: false });
@@ -100,7 +101,7 @@ export default class DefaultOnceWebserver extends BaseUcpComponent<ModelDataType
     let server = fastify(options);
 
 
-    let webRoot = path.join(scenario.eamdPath, scenario.webRoot);
+    let webRoot = scenario.webRoot;
 
     server.register(fastifyStatic, {
       root: webRoot,
