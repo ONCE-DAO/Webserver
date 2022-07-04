@@ -1,4 +1,4 @@
-import DefaultOnceWebserver from "./2_systems/OnceWeberver.class.mjs";
+import DefaultOnceWebServer from "./2_systems/OnceWebServer.class.mjs";
 
-export default DefaultOnceWebserver
-export { DefaultOnceWebserver }
+export default DefaultOnceWebServer
+export { DefaultOnceWebServer }

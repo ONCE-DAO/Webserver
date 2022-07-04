@@ -19,13 +19,13 @@ const modelSchema =
 type ModelDataType = z.infer<typeof modelSchema>
 
 
-export default class DefaultOnceWebserver extends BaseUcpComponent<ModelDataType, OnceWebserver> implements OnceWebserver {
+export default class DefaultOnceWebServer extends BaseUcpComponent<ModelDataType, OnceWebserver> implements OnceWebserver {
 
   static get modelSchema() {
     return modelSchema;
   }
 
-  public readonly ucpModel: UcpModel = new DefaultUcpModel<ModelDataType, OnceWebserver>(DefaultOnceWebserver.modelDefaultData, this);
+  public readonly ucpModel: UcpModel = new DefaultUcpModel<ModelDataType, OnceWebserver>(DefaultOnceWebServer.modelDefaultData, this);
 
   static get modelDefaultData() {
     return {

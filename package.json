@@ -1,5 +1,5 @@
 {
-  "name": "Webserver",
+  "name": "WebServer",
   "version": "build",
   "description": "",
   "main": "index.mjs",
