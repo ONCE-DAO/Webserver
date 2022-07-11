@@ -102,7 +102,7 @@ export default class DefaultOnceWebserver extends BaseUcpComponent<ModelDataType
 
     let webRoot = path.join(scenario.eamdPath, scenario.webRoot);
 
-    server.register(fastifyStatic, {
+    await server.register(fastifyStatic, {
       root: webRoot,
       prefix: '/' + webRoot.split('/').pop() + '/',
       index: false,
@@ -111,6 +111,13 @@ export default class DefaultOnceWebserver extends BaseUcpComponent<ModelDataType
         render: this.buildDirectoryPage
       }
     })
+
+    await server.register(fastifyStatic, {
+      root: path.join(scenario.eamdPath, './Components'),
+      prefix: '/Components/',
+      decorateReply: false
+    })
+
 
     try {
       server.listen({ port: this.model.port })
