@@ -1,4 +1,4 @@
-import fastify, { FastifyHttp2SecureOptions, FastifyInstance } from "fastify";
+import fastify from "fastify";
 import mkdirp from 'mkdirp';
 
 import { keygen } from 'tls-keygen';
@@ -8,7 +8,7 @@ import { existsSync, readFileSync } from "fs";
 import { BaseUcpComponent, DefaultUcpModel, UcpModel, UcpModelProxySchema, UDELoader, z } from "ior:esm:/tla.EAM.UcpComponent[main]";
 import path from "path";
 import OnceWebserver from "../3_services/OnceWebserver.interface.mjs";
-import { ServerSideUcpComponentDescriptorInterface } from "ior:esm:/tla.EAM.Once[dev]";
+import { DefaultIOR, loaderReturnValue, ServerSideUcpComponentDescriptorInterface } from "ior:esm:/tla.EAM.Once[dev]";
 
 const modelSchema =
   z.object({
@@ -99,12 +99,29 @@ export default class DefaultOnceWebserver extends BaseUcpComponent<ModelDataType
 
     let server = fastify(options);
 
+    server.get('/ior*', async (request, reply) => {
+      let url = request.url;
+      if (url.startsWith('/ior:esm:')) {
+        if (request.headers['sec-fetch-dest'] === 'script') {
+          // This all is a resolver!
+          const ior = new DefaultIOR().init(url.replace(/^\//, ''))
+          let urlPath: string = await ior.load({ returnValue: loaderReturnValue.path });
+
+          urlPath = path.relative(ONCE.eamd.scenario.webRoot, urlPath)
+
+
+          reply.redirect('/' + urlPath);
+        }
+      }
+      throw new Error("Not Found");
+
+    })
 
     let webRoot = path.join(scenario.eamdPath, scenario.webRoot);
 
     await server.register(fastifyStatic, {
       root: webRoot,
-      prefix: '/' + webRoot.split('/').pop() + '/',
+      prefix: '/',
       index: false,
       list: {
         format: 'html',
