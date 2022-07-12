@@ -165,9 +165,8 @@ export default class DefaultOnceWebserver extends BaseUcpComponent<ModelDataType
       ior.protocol.push(urlProtocol.ude);
       let udeComponent = await ior.load() as UcpComponent<any, any>;
 
-      //HACK works for now, but should be changed
-      //@ts-ignore
-      return udeComponent.persistanceManager.list[0].ucpComponentData;
+
+      return udeComponent.persistanceManager.ucpComponentData;
 
     } else if (request.method === 'POST') {
       let udeData = UDELoader.validateUDEStructure(request.body);
@@ -186,9 +185,7 @@ export default class DefaultOnceWebserver extends BaseUcpComponent<ModelDataType
 
       await udeComponent.persistanceManager.create();
 
-      //HACK works for now, but should be changed
-      //@ts-ignore
-      return udeComponent.persistanceManager.list[0].ucpComponentData;
+      return udeComponent.persistanceManager.ucpComponentData;
     } else if (request.method === 'DELETE') {
       const ior = new DefaultIOR().init(url);
       ior.protocol.push(urlProtocol.ude);
@@ -205,11 +202,7 @@ export default class DefaultOnceWebserver extends BaseUcpComponent<ModelDataType
       let udeComponent = await ior.load() as UcpComponent<any, any>;
       udeComponent.model = udeData.particle.data;
 
-
-
-      //HACK works for now, but should be changed
-      //@ts-ignore
-      return udeComponent.persistanceManager.list[0].ucpComponentData;
+      return udeComponent.persistanceManager.ucpComponentData;
     }
 
     throw new Error("Method not implemented")
