@@ -5,8 +5,10 @@ import { keygen } from 'tls-keygen';
 
 import fastifyStatic from "@fastify/static";
 import { existsSync, readFileSync } from "fs";
-import UcpComponent, { BaseUcpComponent, DefaultUcpModel, UcpModel, UcpModelProxySchema, UDELoader, z } from "ior:esm:/tla.EAM.Once.UcpComponent[build]";
+import UcpComponent, { BaseUcpComponent, DefaultUcpModel, UcpModel, UcpModelProxySchema, UDELoader } from "ior:esm:/tla.EAM.Once.UcpComponent[build]";
 import path from "path";
+import { z } from "ior:esm:/dev.zod[test-component]";
+
 import OnceWebserver from "../3_services/OnceWebserver.interface.mjs";
 import { DefaultIOR, loaderReturnValue, urlProtocol } from "ior:esm:/tla.EAM.Once[build]";
 
@@ -14,7 +16,7 @@ const modelSchema =
   z.object({
     port: z.number(),
     protocol: z.string().regex(/^https?$/)
-  }).merge(BaseUcpComponent.modelSchema).merge(UcpModelProxySchema);
+  }).merge(BaseUcpComponent.modelSchema);
 
 type ModelDataType = z.infer<typeof modelSchema>
 
