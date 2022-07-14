@@ -1,14 +1,14 @@
-import fastify, { FastifyHttp2SecureOptions, FastifyInstance } from "fastify";
+import fastify from "fastify";
 import mkdirp from 'mkdirp';
 
 import { keygen } from 'tls-keygen';
 
 import fastifyStatic from "@fastify/static";
 import { existsSync, readFileSync } from "fs";
-import { BaseUcpComponent, DefaultUcpModel, UcpModel, UcpModelProxySchema, UDELoader, z } from "ior:esm:/tla.EAM.Once.UcpComponent[build]";
+import UcpComponent, { BaseUcpComponent, DefaultUcpModel, UcpModel, UcpModelProxySchema, UDELoader, z } from "ior:esm:/tla.EAM.Once.UcpComponent[build]";
 import path from "path";
 import OnceWebserver from "../3_services/OnceWebserver.interface.mjs";
-// import { ServerSideUcpComponentDescriptorInterface } from "ior:esm:/tla.EAM.Once[build]";
+import { DefaultIOR, loaderReturnValue, urlProtocol } from "ior:esm:/tla.EAM.Once[build]";
 
 const modelSchema =
   z.object({
@@ -100,18 +100,48 @@ export default class DefaultOnceWebServer extends BaseUcpComponent<ModelDataType
 
     let server = fastify(options);
 
+    server.get('/ior*', async (request, reply) => {
+      let url = request.url;
+      if (url.startsWith('/ior:esm:')) {
+        if (request.headers['sec-fetch-dest'] === 'script') {
+          // This all is a resolver!
+          const ior = new DefaultIOR().init(url.replace(/^\//, ''))
+          let urlPath: string = await ior.load({ returnValue: loaderReturnValue.path });
+
+          urlPath = path.relative(ONCE.eamd.currentScenario.webRoot, urlPath)
+
+
+          reply.redirect('/' + urlPath);
+        }
+      }
+      throw new Error("Not Found");
+
+    })
+
+    server.get('/UDE/*', this._handleUDE_CRUD)
+    server.put('/UDE/*', this._handleUDE_CRUD)
+    server.post('/UDE/*', this._handleUDE_CRUD)
+    server.post('/UDE', this._handleUDE_CRUD)
+    server.delete('/UDE/*', this._handleUDE_CRUD)
 
     let webRoot = scenario.webRoot;
 
-    server.register(fastifyStatic, {
+    await server.register(fastifyStatic, {
       root: webRoot,
-      prefix: '/' + webRoot.split('/').pop() + '/',
+      prefix: '/',
       index: false,
       list: {
         format: 'html',
         render: this.buildDirectoryPage
       }
     })
+
+    await server.register(fastifyStatic, {
+      root: path.join(ONCE.oldEamd.eamdDirectory, './Components'),
+      prefix: '/Components/',
+      decorateReply: false
+    })
+
 
     try {
       server.listen({ port: this.model.port })
@@ -122,6 +152,59 @@ export default class DefaultOnceWebServer extends BaseUcpComponent<ModelDataType
     this._server = server;
 
     console.log("ONCE STARTED AS NODE_JS WITH EXTERNAL MODULE");
+  }
+
+  private async _handleUDE_CRUD(request: any, reply: any) {
+    let url = request.url;
+    reply.header('Content-Type', 'application/json; charset=utf-8');
+
+    if (request.method === 'GET') {
+
+      const ior = new DefaultIOR().init(url);
+      ior.protocol.push(urlProtocol.ude);
+      let udeComponent = await ior.load() as UcpComponent<any, any>;
+
+
+      return udeComponent.persistanceManager.ucpComponentData;
+
+    } else if (request.method === 'POST') {
+      let udeData = UDELoader.validateUDEStructure(request.body);
+      let udeComponentClass = await DefaultIOR.load(udeData.typeIOR);
+      let udeComponent = new udeComponentClass() as UcpComponent<any, any>;
+
+      udeComponent.model = udeData.particle.data;
+      udeComponent.IOR.id = udeData.id;
+
+      let persistanceManagerHandler = udeComponent.persistanceManager;
+      if (udeData.alias !== undefined) {
+        for (let alias of udeData.alias) {
+          persistanceManagerHandler.addAlias(alias);
+        }
+      }
+
+      await udeComponent.persistanceManager.create();
+
+      return udeComponent.persistanceManager.ucpComponentData;
+    } else if (request.method === 'DELETE') {
+      const ior = new DefaultIOR().init(url);
+      ior.protocol.push(urlProtocol.ude);
+      let udeComponent = await ior.load() as UcpComponent<any, any>;
+
+      await udeComponent.persistanceManager.delete();
+      return { delete: 'ok' }
+
+    } else if (request.method === 'PUT') {
+      let udeData = UDELoader.validateUDEStructure(request.body);
+
+      const ior = new DefaultIOR().init(url);
+      ior.protocol.push(urlProtocol.ude);
+      let udeComponent = await ior.load() as UcpComponent<any, any>;
+      udeComponent.model = udeData.particle.data;
+
+      return udeComponent.persistanceManager.ucpComponentData;
+    }
+
+    throw new Error("Method not implemented")
   }
 
   buildDirectoryPage(dirs: { href: string, name: string }[], files: { href: string, name: string }[]) {
