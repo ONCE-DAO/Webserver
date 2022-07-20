@@ -46,3 +46,5 @@ jspm_packages/
 *.mjs.map
 
 dist
+
+src/index.export.mts
