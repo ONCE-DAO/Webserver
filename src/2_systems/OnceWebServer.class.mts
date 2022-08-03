@@ -5,7 +5,7 @@ import { keygen } from 'tls-keygen';
 
 import fastifyStatic from "@fastify/static";
 import { existsSync, readFileSync } from "fs";
-import { UcpComponent, BaseUcpComponent, DefaultUcpModel, UcpModel, UcpModelProxySchema, UDELoader } from "ior:esm:/tla.EAM.Once.UcpComponent[build]";
+import { UcpComponent, BaseUcpComponent, DefaultUcpModel, UcpModel, UDELoader } from "ior:esm:/tla.EAM.Once.UcpComponent[build]";
 import path from "path";
 import { z } from "ior:esm:/dev.zod[test-component]";
 
@@ -22,6 +22,7 @@ type ModelDataType = z.infer<typeof modelSchema>
 
 
 export default class DefaultOnceWebServer extends BaseUcpComponent<ModelDataType, OnceWebserver> implements OnceWebserver {
+  modelSchema = modelSchema;
 
   static get modelSchema() {
     return modelSchema;
@@ -53,7 +54,7 @@ export default class DefaultOnceWebServer extends BaseUcpComponent<ModelDataType
   }
 
   static async start(scenarioName?: string) {
-    if (typeof scenarioName === "undefined") scenarioName = this.classDescriptor.className + 'Instance';
+    if (typeof scenarioName === "undefined") scenarioName = this.classDescriptor.name + 'Instance';
     try {
       let loadedServer = await UDELoader.load(scenarioName);
       if (loadedServer instanceof this) {
@@ -68,6 +69,7 @@ export default class DefaultOnceWebServer extends BaseUcpComponent<ModelDataType
     }
 
     let newServer = new this();
+    await newServer.initPersistanceManager()
     newServer.persistanceManager.addAlias(scenarioName);
     await newServer.persistanceManager.create();
     await newServer.start();
